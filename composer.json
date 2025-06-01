@@ -1,0 +1,35 @@
+{
+    "name": "snaptext/chat-app",
+    "description": "A Snapchat-like messaging application with real-time features",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "cboden/ratchet": "^0.4.4",
+        "vlucas/phpdotenv": "^5.5",
+        "firebase/php-jwt": "^6.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "SnapText Developer",
+            "email": "dev@snaptext.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "mkdir -p uploads/avatars uploads/messages",
+            "chmod 777 uploads/avatars uploads/messages"
+        ],
+        "start-websocket": "php websocket/server.php",
+        "start": "php -S localhost:8000"
+    }
+}
