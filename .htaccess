@@ -1,55 +1,55 @@
 # Enable URL rewriting
 RewriteEngine On
 
-# Set base directory
-RewriteBase /
+# Set base directory (only needed if not in root)
+RewriteBase /snaptext-chat-application-main
 
 # Redirect to HTTPS if not already
 RewriteCond %{HTTPS} !=on
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]
 
-# Prevent directory listing
-Options -Indexes
+# Prevent directory listing and MultiViews
+Options -Indexes -MultiViews
 
 # Handle front controller pattern
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/index\.php [NC]
 RewriteRule ^(.*)$ index.php [QSA,L]
 
-# Protect sensitive files
+# Protect sensitive files (Apache 2.4+ syntax)
 <FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 <FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|json|lock|swp)|~)$">
-    Order allow,deny
-    Deny from all
-    Satisfy All
+    Require all denied
 </FilesMatch>
 
-# Protect config directory
-<DirectoryMatch "^/.*/config/">
-    Deny from all
-</DirectoryMatch>
+# Protect directories (Apache 2.4+ syntax)
+RewriteEngine On
+# Verhindert den Zugriff auf das 'vendor' Verzeichnis
+RewriteRule ^vendor/ - [F,L]
+# Verhindert den Zugriff auf das 'config' Verzeichnis
+RewriteRule ^config/ - [F,L]
 
-# Protect vendor directory
-<DirectoryMatch "^/.*/vendor/">
-    Deny from all
-</DirectoryMatch>
+#<DirectoryMatch "^/config/">
+#    Require all denied
+#</DirectoryMatch>
+#<DirectoryMatch "^/vendor/">
+#    Require all denied
+#</DirectoryMatch>
 
 # Protect composer files
 <Files composer.json>
-    Order allow,deny
-    Deny from all
+    Require all denied
 </Files>
 
 <Files composer.lock>
-    Order allow,deny
-    Deny from all
+    Require all denied
 </Files>
 
-# Enable compression for better performance
+# Enable compression
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/plain
     AddOutputFilterByType DEFLATE text/html
@@ -63,25 +63,24 @@ RewriteRule ^(.*)$ index.php [QSA,L]
     AddOutputFilterByType DEFLATE application/json
 </IfModule>
 
-# Set security headers
+# Security headers
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-XSS-Protection "1; mode=block"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
-    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' wss: https:;"
+    # Adjust CSP to your needs (example allows common CDNs):
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://*.googleapis.com https://*.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' wss: https:;"
 </IfModule>
 
-# Set default character set
+# Character set and MIME types
 AddDefaultCharset UTF-8
-
-# Set proper MIME types
 AddType application/javascript .js
 AddType text/css .css
 AddType image/svg+xml .svg
 AddType application/json .json
 
-# Enable caching
+# Caching
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresByType image/jpg "access plus 1 year"
@@ -93,8 +92,8 @@ AddType application/json .json
     ExpiresByType application/javascript "access plus 1 month"
 </IfModule>
 
-# PHP configuration
-<IfModule mod_php7.c>
+# PHP configuration (works for both mod_php and PHP-FPM via .user.ini)
+<IfModule mod_php.c>
     php_value upload_max_filesize 10M
     php_value post_max_size 10M
     php_value max_execution_time 300
@@ -104,7 +103,7 @@ AddType application/json .json
     php_value error_log logs/php_error.log
 </IfModule>
 
-# Handle errors
+# Error documents (relative paths)
 ErrorDocument 404 /views/errors/404.php
 ErrorDocument 403 /views/errors/403.php
 ErrorDocument 500 /views/errors/500.php
